@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historica — The Age of Industry Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1008;
+    --parchment: #f5edd6;
+    --parchment-dark: #e8d9b5;
+    --parchment-deeper: #d4c090;
+    --sepia: #8b5e3c;
+    --sepia-light: #c49a6c;
+    --crimson: #8b1a1a;
+    --gold: #c9920a;
+    --gold-light: #e8b84b;
+    --teal-dark: #1a4a4a;
+    --teal: #2d6a6a;
+    --correct: #2d5a2d;
+    --correct-light: #e8f5e8;
+    --wrong: #8b1a1a;
+    --wrong-light: #fde8e8;
+    --shadow: rgba(26,16,8,0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Crimson Pro', serif;
+    background: var(--parchment);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 10% 10%, rgba(139,94,60,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 90%, rgba(139,26,26,0.05) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  /* ── ORNAMENTAL HEADER ── */
+  .brand {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .brand-rule {
+    display: flex; align-items: center; gap: 1rem; margin: 0.5rem 0;
+  }
+  .brand-rule::before, .brand-rule::after {
+    content: ''; flex: 1; height: 1px; background: linear-gradient(to right, transparent, var(--sepia-light), transparent);
+  }
+  .brand-ornament { color: var(--gold); font-size: 1.2rem; }
+  .brand h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-weight: 900;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    line-height: 1;
+    text-shadow: 2px 2px 0 var(--parchment-dark), 4px 4px 8px var(--shadow);
+  }
+  .brand .subtitle {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.9rem;
+    letter-spacing: 0.25em;
+    color: var(--sepia);
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+  }
+
+  /* ── CARDS / PANELS ── */
+  .panel {
+    background: var(--parchment);
+    border: 1px solid var(--parchment-deeper);
+    border-radius: 4px;
+    padding: 2rem 2.5rem;
+    box-shadow: 0 4px 24px var(--shadow), inset 0 0 80px rgba(201,146,10,0.03);
+    position: relative;
+    max-width: 520px;
+    width: 90%;
+  }
+  .panel::before {
+    content: '';
+    position: absolute; inset: 6px;
+    border: 1px solid var(--parchment-deeper);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.9rem 2rem;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--parchment);
+    box-shadow: 3px 3px 0 var(--sepia);
+  }
+  .btn-primary:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--sepia); }
+  .btn-primary:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--sepia); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--parchment-deeper);
+  }
+  .btn-secondary:hover { background: var(--parchment-dark); border-color: var(--sepia-light); }
+
+  .btn-danger {
+    background: var(--crimson);
+    color: var(--parchment);
+    box-shadow: 3px 3px 0 #5a1010;
+  }
+  .btn-danger:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 #5a1010; }
+
+  .btn-lg { font-size: 1rem; padding: 1.1rem 2.5rem; }
+  .btn-full { width: 100%; }
+
+  /* ── INPUTS ── */
+  .input-group { margin-bottom: 1.25rem; }
+  .input-group label {
+    display: block;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sepia);
+    margin-bottom: 0.5rem;
+  }
+  .input-group input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--parchment-dark);
+    border: 1px solid var(--parchment-deeper);
+    border-radius: 2px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.1rem;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-group input:focus { border-color: var(--sepia-light); background: var(--parchment); }
+
+  /* ── HOME SCREEN ── */
+  #home-screen { padding: 2rem; gap: 2rem; }
+  .home-actions { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
+
+  /* ── LOBBY ── */
+  #lobby-screen, #join-screen { padding: 2rem; gap: 1.5rem; }
+  .room-code-display {
+    text-align: center;
+    padding: 1.5rem;
+    background: var(--ink);
+    border-radius: 2px;
+    margin: 1rem 0;
+  }
+  .room-code-label {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sepia-light);
+  }
+  .room-code-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--gold-light);
+    letter-spacing: 0.15em;
+  }
+  .player-list { list-style: none; margin-top: 0.5rem; }
+  .player-list li {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--parchment-dark);
+    display: flex; align-items: center; gap: 0.75rem;
+    font-size: 1.05rem;
+  }
+  .player-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--sepia);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700; font-size: 0.85rem;
+    color: var(--parchment);
+    flex-shrink: 0;
+  }
+  .player-host-badge {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.65rem; letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--gold); color: var(--ink);
+    padding: 2px 6px; border-radius: 2px;
+    margin-left: auto;
+  }
+
+  /* ── QUESTION / GAME SCREEN ── */
+  #game-screen { padding: 1rem; align-items: stretch; gap: 0; justify-content: flex-start; }
+  .game-header {
+    background: var(--ink);
+    color: var(--parchment);
+    padding: 0.75rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 3px solid var(--gold);
+  }
+  .game-header-brand {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700; font-size: 1.1rem;
+    color: var(--gold-light);
+  }
+  .game-progress {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem; letter-spacing: 0.15em;
+    color: var(--sepia-light);
+  }
+  .game-score {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700; font-size: 1.1rem;
+    color: var(--gold-light);
+  }
+
+  .timer-bar-wrap { height: 6px; background: var(--parchment-dark); position: relative; }
+  .timer-bar {
+    height: 100%;
+    background: linear-gradient(to right, var(--gold), var(--crimson));
+    transition: width 1s linear;
+    width: 100%;
+  }
+
+  .game-body {
+    flex: 1;
+    display: flex; flex-direction: column;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    gap: 1.5rem;
+  }
+
+  .hint-box {
+    background: var(--teal-dark);
+    color: var(--parchment-light, #f5edd6);
+    border-radius: 2px;
+    padding: 1rem 1.25rem;
+    border-left: 4px solid var(--gold);
+    font-style: italic;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  .hint-box .hint-label {
+    font-family: 'Special Elite', monospace;
+    font-style: normal;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-light);
+    margin-bottom: 0.4rem;
+  }
+
+  .question-text {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.3rem, 3vw, 1.75rem);
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.35;
+    text-align: center;
+  }
+
+  .answers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  @media (max-width: 500px) { .answers-grid { grid-template-columns: 1fr; } }
+
+  .answer-btn {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+    border-radius: 2px;
+    border: 1.5px solid var(--parchment-deeper);
+    background: var(--parchment);
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    line-height: 1.35;
+    box-shadow: 2px 2px 0 var(--parchment-darker, #c4b080);
+  }
+  .answer-btn:hover:not(:disabled) {
+    background: var(--parchment-dark);
+    border-color: var(--sepia-light);
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--parchment-deeper);
+  }
+  .answer-btn .answer-letter {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    width: 22px; height: 22px;
+    background: var(--ink); color: var(--parchment);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .answer-btn.correct {
+    background: #d4edda; border-color: var(--correct);
+    box-shadow: 2px 2px 0 var(--correct);
+  }
+  .answer-btn.correct .answer-letter { background: var(--correct); }
+  .answer-btn.wrong {
+    background: #f8d7da; border-color: var(--crimson);
+    box-shadow: 2px 2px 0 var(--crimson);
+  }
+  .answer-btn.wrong .answer-letter { background: var(--crimson); }
+  .answer-btn.revealed {
+    opacity: 0.55;
+  }
+  .answer-btn:disabled { cursor: default; }
+
+  /* ── RESULT FEEDBACK ── */
+  .feedback-overlay {
+    text-align: center;
+    padding: 1rem;
+    border-radius: 2px;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .feedback-overlay.show { opacity: 1; }
+  .feedback-overlay.correct-fb { background: #d4edda; color: var(--correct); }
+  .feedback-overlay.wrong-fb { background: #f8d7da; color: var(--crimson); }
+
+  /* ── LEADERBOARD ── */
+  #leaderboard-screen { padding: 2rem; gap: 1.5rem; align-items: center; }
+  .lb-header {
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--sepia);
+    margin-bottom: 0.5rem;
+  }
+  .lb-list { list-style: none; width: 100%; max-width: 480px; }
+  .lb-item {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--parchment-dark);
+    animation: slideIn 0.4s ease both;
+  }
+  .lb-item:nth-child(1) { animation-delay: 0.05s; }
+  .lb-item:nth-child(2) { animation-delay: 0.1s; }
+  .lb-item:nth-child(3) { animation-delay: 0.15s; }
+  .lb-item:nth-child(4) { animation-delay: 0.2s; }
+  .lb-item:nth-child(n+5) { animation-delay: 0.25s; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: none; }
+  }
+  .lb-rank {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900; font-size: 1.4rem;
+    width: 36px; text-align: center;
+    color: var(--sepia-light);
+  }
+  .lb-item.rank-1 .lb-rank { color: var(--gold); font-size: 1.6rem; }
+  .lb-item.rank-2 .lb-rank { color: #a0a0a0; }
+  .lb-item.rank-3 .lb-rank { color: var(--sepia); }
+  .lb-name { flex: 1; font-size: 1.1rem; font-weight: 600; }
+  .lb-score {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.9rem; color: var(--sepia);
+  }
+
+  /* ── FINAL SCREEN ── */
+  #final-screen { padding: 2rem; gap: 1.5rem; text-align: center; }
+  .trophy {
+    font-size: 4rem; line-height: 1;
+    filter: drop-shadow(0 4px 8px var(--shadow));
+  }
+  .final-winner {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; color: var(--sepia);
+  }
+  .final-winner strong {
+    display: block;
+    font-size: 2.2rem; font-weight: 900;
+    color: var(--ink);
+  }
+
+  /* ── WAITING ── */
+  .waiting-pulse {
+    display: inline-block;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gold);
+    animation: pulse 1.2s infinite;
+    margin-left: 0.5rem;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+  /* ── HOST WAITING BANNER ── */
+  .host-banner {
+    background: var(--gold);
+    color: var(--ink);
+    text-align: center;
+    padding: 0.6rem;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .section-title {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sepia);
+    margin-bottom: 0.75rem;
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--parchment-deeper), transparent);
+    margin: 1rem 0;
+  }
+
+  /* ── FACT BOX ── */
+  .fact-reveal {
+    background: var(--parchment-dark);
+    border: 1px solid var(--parchment-deeper);
+    border-radius: 2px;
+    padding: 1rem 1.25rem;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--sepia);
+    line-height: 1.6;
+    margin-top: 0.5rem;
+  }
+  .fact-reveal .fact-label {
+    font-family: 'Special Elite', monospace;
+    font-style: normal;
+    font-size: 0.7rem; letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 0.4rem;
+  }
+
+  .btn-row { display: flex; gap: 0.75rem; width: 100%; }
+  .btn-row .btn { flex: 1; }
+
+  #copy-btn { font-size: 0.75rem; padding: 0.4rem 0.75rem; }
+</style>
+</head>
+<body>
+
+<div id="home-screen" class="screen active">
+  <div class="brand">
+    <div class="brand-rule"><span class="brand-ornament">✦</span></div>
+    <h1>Historica</h1>
+    <div class="brand-rule"><span class="brand-ornament">✦</span></div>
+    <p class="subtitle">The Age of Industry · 1850–1910</p>
+  </div>
+  <div class="panel">
+    <p class="section-title">Choose your role</p>
+    <div class="home-actions">
+      <button class="btn btn-primary btn-lg btn-full" onclick="showHostSetup()">⚑ &nbsp;Host a Game</button>
+      <button class="btn btn-secondary btn-lg btn-full" onclick="showJoinScreen()">⊕ &nbsp;Join with Code</button>
+    </div>
+  </div>
+</div>
+
+<div id="host-setup-screen" class="screen">
+  <div class="panel">
+    <p class="section-title">Host Setup</p>
+    <div class="input-group">
+      <label>Your Name</label>
+      <input type="text" id="host-name-input" placeholder="e.g. Professor Hawthorne">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="createRoom()">Create Room</button>
+    <div class="divider"></div>
+    <button class="btn btn-secondary btn-full" onclick="showScreen('home-screen')">← Back</button>
+  </div>
+</div>
+
+<div id="join-screen" class="screen">
+  <div class="panel">
+    <p class="section-title">Join a Game</p>
+    <div class="input-group">
+      <label>Your Name</label>
+      <input type="text" id="join-name-input" placeholder="e.g. Lady Pemberton">
+    </div>
+    <div class="input-group">
+      <label>Room Code</label>
+      <input type="text" id="join-code-input" placeholder="CODE">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="joinRoom()">Enter Chamber</button>
+    <div class="divider"></div>
+    <button class="btn btn-secondary btn-full" onclick="showScreen('home-screen')">← Back</button>
+  </div>
+</div>
+
+<div id="lobby-screen" class="screen">
+  <div class="host-banner">⚑ You are Host</div>
+  <div class="panel">
+    <div class="room-code-display">
+      <div class="room-code-label">Share this code</div>
+      <div class="room-code-value" id="display-room-code">—</div>
+    </div>
+    <ul class="player-list" id="lobby-player-list"></ul>
+    <button class="btn btn-primary btn-full btn-lg" onclick="startGame()">Begin Quiz</button>
+  </div>
+</div>
+
+<div id="waiting-screen" class="screen">
+  <div class="panel" style="text-align:center;">
+    <p class="section-title">Waiting Room</p>
+    <p id="waiting-msg">Waiting for host<span class="waiting-pulse"></span></p>
+    <ul class="player-list" id="waiting-player-list"></ul>
+  </div>
+</div>
+
+<div id="game-screen" class="screen">
+  <div class="game-header">
+    <div class="game-header-brand">Historica</div>
+    <div class="game-progress" id="q-progress">Q 1 / 13</div>
+    <div class="game-score" id="my-score">0 pts</div>
+  </div>
+  <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+  <div class="game-body">
+    <div class="hint-box"><span id="hint-text"></span></div>
+    <div class="question-text" id="question-text"></div>
+    <div class="answers-grid" id="answers-grid"></div>
+    <div class="feedback-overlay" id="feedback-overlay"></div>
+    <div class="fact-reveal" id="fact-reveal" style="display:none;"></div>
+  </div>
+</div>
+
+<div id="leaderboard-screen" class="screen">
+  <div class="brand"><h1 style="font-size:2.5rem;">Standings</h1></div>
+  <div class="lb-header" id="lb-subtitle"></div>
+  <ul class="lb-list" id="lb-list"></ul>
+  <div id="lb-host-controls" style="display:none; width:100%; max-width:480px;">
+    <button class="btn btn-primary btn-full btn-lg" onclick="nextQuestion()">Next Question →</button>
+  </div>
+</div>
+
+<div id="final-screen" class="screen">
+  <div class="trophy">🏆</div>
+  <div class="final-winner">Champion: <strong id="final-winner-name">—</strong></div>
+  <ul class="lb-list" id="final-lb-list"></ul>
+  <button class="btn btn-secondary" onclick="location.reload()">Return Home</button>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDW-UE-a4TMRcfz3E13mLOgBtx6bywwCtE",
+    authDomain: "history-780ec.firebaseapp.com",
+    databaseURL: "https://history-780ec-default-rtdb.firebaseio.com",
+    projectId: "history-780ec",
+    storageBucket: "history-780ec.firebasestorage.app",
+    messagingSenderId: "426243337205",
+    appId: "1:426243337205:web:fc7f097a6fa0497297cebc",
+    measurementId: "G-Q1Z3N3BSVB"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // --- GAME LOGIC ---
+  const QUESTIONS = [
+    { year: 1853, hint: "Commodore Perry's 'Black Ships' in Japan.", question: "Which Commodore forced Japan to open trade in 1853?", answers: ["Matthew Perry","John Paul Jones","David Farragut","Winfield Scott"], correct: 0, fact: "This ended 200 years of isolation." },
+    { year: 1859, hint: "A work on natural selection.", question: "What was Charles Darwin's landmark 1859 work?", answers: ["On the Origin of Species","The Descent of Man","Principles of Geology","The Voyage of the Beagle"], correct: 0, fact: "It sold out on its first day." },
+    { year: 1861, hint: "Bombardment in South Carolina.", question: "Which fort's bombardment began the Civil War?", answers: ["Fort Sumter","Fort McHenry","Fort Donelson","Fort Monroe"], correct: 0, fact: "No soldiers died in the battle itself." },
+    { year: 1865, hint: "Assassination at Ford's Theatre.", question: "Who killed Abraham Lincoln?", answers: ["John Wilkes Booth","Charles Guiteau","Leon Czolgosz","Jesse James"], correct: 0, fact: "Lincoln died the next morning." },
+    { year: 1869, hint: "Golden spike in Utah.", question: "What was completed in 1869 at Promontory Summit?", answers: ["Transcontinental Railroad","Erie Canal","Panama Railway","Suez Canal"], correct: 0, fact: "It connected the Atlantic and Pacific." },
+    { year: 1871, hint: "Proclaimed in the Hall of Mirrors.", question: "Which empire was proclaimed in Versailles in 1871?", answers: ["German Empire","Austrian Empire","Ottoman Empire","Russian Empire"], correct: 0, fact: "Wilhelm I was proclaimed Emperor." },
+    { year: 1876, hint: "First call to Mr. Watson.", question: "Who invented the telephone?", answers: ["Alexander Graham Bell","Thomas Edison","Nikola Tesla","Elisha Gray"], correct: 0, fact: "Patent filed just hours before Elisha Gray." },
+    { year: 1879, hint: "Practical light bulb.", question: "Who developed the incandescent light bulb?", answers: ["Thomas Edison","Nikola Tesla","Humphry Davy","Joseph Swan"], correct: 0, fact: "The filament lasted 1,200 hours." },
+    { year: 1885, hint: "French gift in NYC harbor.", question: "The Statue of Liberty was dedicated in which year?", answers: ["1886","1885","1876","1889"], correct: 0, fact: "Engineered by Gustave Eiffel." },
+    { year: 1888, hint: "Dutch painter in Arles.", question: "Which artist cut off his ear in 1888?", answers: ["Vincent van Gogh","Paul Gauguin","Paul Cézanne","Georges Seurat"], correct: 0, fact: "Happened after a fight with Gauguin." },
+    { year: 1896, hint: "Revival in Athens.", question: "Where were the first modern Olympics held?", answers: ["Athens","Paris","London","Rome"], correct: 0, fact: "14 nations competed." },
+    { year: 1903, hint: "12 seconds at Kitty Hawk.", question: "Which brothers made the first powered flight?", answers: ["Wright Brothers","Bleriot Brothers","Langley Brothers","Curtiss Brothers"], correct: 0, fact: "Longest flight was 59 seconds." },
+    { year: 1906, hint: "Earthquake in California.", question: "Which city was devastated in 1906?", answers: ["San Francisco","Los Angeles","Seattle","Portland"], correct: 0, fact: "Fires caused most of the damage." }
+  ];
+
+  let state = { isHost: false, myName: '', roomCode: '', players: [], myId: 'p' + Math.floor(Math.random() * 100000), currentQ: 0, myScore: 0, timeLeft: 20, timerInterval: null };
+
+  window.showScreen = (id) => {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  };
+
+  window.showHostSetup = () => showScreen('host-setup-screen');
+  window.showJoinScreen = () => showScreen('join-screen');
+
+  window.createRoom = async () => {
+    state.myName = document.getElementById('host-name-input').value || 'Host';
+    state.roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+    state.isHost = true;
+    state.players = [{ id: state.myId, name: state.myName, score: 0 }];
+    
+    await set(ref(db, 'rooms/' + state.roomCode), {
+      status: 'lobby',
+      players: state.players,
+      currentQ: 0,
+      hostId: state.myId
+    });
+    
+    listenToRoom();
+    showScreen('lobby-screen');
+    document.getElementById('display-room-code').textContent = state.roomCode;
+  };
+
+  window.joinRoom = async () => {
+    state.myName = document.getElementById('join-name-input').value || 'Player';
+    state.roomCode = document.getElementById('join-code-input').value.toUpperCase();
+    
+    const snap = await get(ref(db, 'rooms/' + state.roomCode));
+    if (snap.exists()) {
+      const room = snap.val();
+      room.players.push({ id: state.myId, name: state.myName, score: 0 });
+      await update(ref(db, 'rooms/' + state.roomCode), { players: room.players });
+      listenToRoom();
+      showScreen('waiting-screen');
+    } else {
+      alert("Room not found!");
+    }
+  };
+
+  function listenToRoom() {
+    onValue(ref(db, 'rooms/' + state.roomCode), (snap) => {
+      const room = snap.val();
+      if (!room) return;
+      state.players = room.players;
+      state.currentQ = room.currentQ;
+
+      if (room.status === 'lobby') {
+        renderPlayers('lobby-player-list');
+        renderPlayers('waiting-player-list');
+      } else if (room.status === 'question') {
+        loadQuestion();
+      } else if (room.status === 'leaderboard') {
+        showLeaderboard();
+      } else if (room.status === 'final') {
+        showFinal();
+      }
+    });
+  }
+
+  function renderPlayers(id) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = state.players.map(p => `<li>${p.name}</li>`).join('');
+  }
+
+  window.startGame = async () => {
+    await update(ref(db, 'rooms/' + state.roomCode), { status: 'question' });
+  };
+
+  function loadQuestion() {
+    const q = QUESTIONS[state.currentQ];
+    document.getElementById('q-progress').textContent = `Q ${state.currentQ + 1} / ${QUESTIONS.length}`;
+    document.getElementById('hint-text').textContent = q.hint;
+    document.getElementById('question-text').textContent = q.question;
+    document.getElementById('my-score').textContent = `${state.myScore} pts`;
+    document.getElementById('fact-reveal').style.display = 'none';
+    document.getElementById('feedback-overlay').className = 'feedback-overlay';
+
+    const grid = document.getElementById('answers-grid');
+    grid.innerHTML = q.answers.map((a, i) => `<button class="answer-btn" onclick="submitAnswer(${i})">${a}</button>`).join('');
+    
+    showScreen('game-screen');
+    startTimer();
+  }
+
+  function startTimer() {
+    state.timeLeft = 20;
+    const bar = document.getElementById('timer-bar');
+    bar.style.width = '100%';
+    clearInterval(state.timerInterval);
+    state.timerInterval = setInterval(() => {
+      state.timeLeft--;
+      bar.style.width = (state.timeLeft / 20 * 100) + '%';
+      if (state.timeLeft <= 0) {
+        submitAnswer(-1);
+      }
+    }, 1000);
+  }
+
+  window.submitAnswer = async (idx) => {
+    clearInterval(state.timerInterval);
+    const q = QUESTIONS[state.currentQ];
+    const isCorrect = idx === q.correct;
+    if (isCorrect) state.myScore += (100 + state.timeLeft * 10);
+
+    const btn = document.querySelectorAll('.answer-btn');
+    btn.forEach((b, i) => {
+      b.disabled = true;
+      if (i === q.correct) b.classList.add('correct');
+      else if (i === idx) b.classList.add('wrong');
+    });
+
+    document.getElementById('fact-reveal').innerHTML = q.fact;
+    document.getElementById('fact-reveal').style.display = 'block';
+
+    const pIdx = state.players.findIndex(p => p.id === state.myId);
+    state.players[pIdx].score = state.myScore;
+    await update(ref(db, 'rooms/' + state.roomCode), { players: state.players });
+
+    if (state.isHost) {
+      setTimeout(async () => {
+        await update(ref(db, 'rooms/' + state.roomCode), { status: 'leaderboard' });
+      }, 4000);
+    }
+  };
+
+  function showLeaderboard() {
+    const sorted = [...state.players].sort((a,b) => b.score - a.score);
+    document.getElementById('lb-list').innerHTML = sorted.map(p => `<li class="lb-item">${p.name}: ${p.score}</li>`).join('');
+    document.getElementById('lb-host-controls').style.display = state.isHost ? 'block' : 'none';
+    showScreen('leaderboard-screen');
+  }
+
+  window.nextQuestion = async () => {
+    const next = state.currentQ + 1;
+    if (next >= QUESTIONS.length) {
+      await update(ref(db, 'rooms/' + state.roomCode), { status: 'final' });
+    } else {
+      await update(ref(db, 'rooms/' + state.roomCode), { status: 'question', currentQ: next });
+    }
+  };
+
+  function showFinal() {
+    const sorted = [...state.players].sort((a,b) => b.score - a.score);
+    document.getElementById('final-winner-name').textContent = sorted[0].name;
+    document.getElementById('final-lb-list').innerHTML = sorted.map(p => `<li>${p.name}: ${p.score}</li>`).join('');
+    showScreen('final-screen');
+  }
+</script>
+</body>
+</html>
